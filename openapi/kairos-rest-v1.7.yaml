@@ -1,0 +1,611 @@
+openapi: 3.0.3
+info:
+  title: Panasonic KAIROS REST API
+  version: "1.7"
+  description: |
+    Unofficial machine-readable description of the KAIROS REST API
+    (Kairos Core AT-KC200 / AT-KC100 / AT-KC2000 / AT-KC1000, version 1.7.3).
+
+    Derived from the vendor PDF spec. This file is the source of truth for
+    the `panasonic-kairos` Rust client — do not copy the original PDF into
+    the repository.
+
+    Constraints:
+      - GET and PATCH only (PUT / POST / DELETE return 400)
+      - Trailing slash is rejected (`404 Invalid url`)
+      - PATCH uses RFC 7396 `application/merge-patch+json`
+      - Auth: HTTP Basic and Digest; username is `Kairos`
+      - Default endpoint: `http://192.168.10.10:1234`
+  contact:
+    name: MikanseiLaboratory
+    url: https://github.com/MikanseiLaboratory/panasonic-kairos-rs
+servers:
+  - url: http://192.168.10.10:1234
+    description: Factory-default HTTP endpoint
+security:
+  - basicAuth: []
+  - digestAuth: []
+tags:
+  - name: inputs
+  - name: macros
+  - name: aux
+  - name: multiviewers
+  - name: scenes
+paths:
+  /inputs:
+    get:
+      tags: [inputs]
+      operationId: listInputs
+      responses:
+        "200":
+          description: All inputs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Input"
+  /inputs/{input}:
+    get:
+      tags: [inputs]
+      operationId: getInput
+      parameters:
+        - $ref: "#/components/parameters/InputId"
+      responses:
+        "200":
+          description: One input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Input"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /macros:
+    get:
+      tags: [macros]
+      operationId: listMacros
+      responses:
+        "200":
+          description: All macros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Macro"
+  /macros/{macro}:
+    get:
+      tags: [macros]
+      operationId: getMacro
+      parameters:
+        - $ref: "#/components/parameters/MacroId"
+      responses:
+        "200":
+          description: One macro
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Macro"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [macros]
+      operationId: patchMacro
+      parameters:
+        - $ref: "#/components/parameters/MacroId"
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/MacroPatch"
+            example:
+              state: play
+      responses:
+        "200":
+          description: Applied
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /aux:
+    get:
+      tags: [aux]
+      operationId: listAux
+      responses:
+        "200":
+          description: All AUX buses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Aux"
+  /aux/{aux}:
+    get:
+      tags: [aux]
+      operationId: getAux
+      parameters:
+        - $ref: "#/components/parameters/AuxId"
+      responses:
+        "200":
+          description: One AUX
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aux"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [aux]
+      operationId: patchAux
+      parameters:
+        - $ref: "#/components/parameters/AuxId"
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/AuxPatch"
+            example:
+              source: Black
+      responses:
+        "200":
+          description: Applied
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /multiviewers:
+    get:
+      tags: [multiviewers]
+      operationId: listMultiviewers
+      responses:
+        "200":
+          description: All multiviewers (index 0-3 on AT-KC200 / AT-KC2000)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Multiviewer"
+  /multiviewers/{multiviewer}:
+    get:
+      tags: [multiviewers]
+      operationId: getMultiviewer
+      parameters:
+        - $ref: "#/components/parameters/MultiviewerId"
+      responses:
+        "200":
+          description: One multiviewer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Multiviewer"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [multiviewers]
+      operationId: patchMultiviewer
+      parameters:
+        - $ref: "#/components/parameters/MultiviewerId"
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/MultiviewerPatch"
+            example:
+              preset: 11
+      responses:
+        "200":
+          description: Applied
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /multiviewers/{multiviewer}/sdp:
+    get:
+      tags: [multiviewers]
+      operationId: getMultiviewerSdp
+      parameters:
+        - $ref: "#/components/parameters/MultiviewerId"
+      responses:
+        "200":
+          description: SDP session description (RFC 4566)
+          content:
+            application/sdp:
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /scenes:
+    get:
+      tags: [scenes]
+      operationId: listScenes
+      responses:
+        "200":
+          description: All scenes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Scene"
+  /scenes/{scene}:
+    get:
+      tags: [scenes]
+      operationId: getScene
+      parameters:
+        - $ref: "#/components/parameters/SceneId"
+      responses:
+        "200":
+          description: One scene
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scene"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /scenes/{scene}/{layer}:
+    patch:
+      tags: [scenes]
+      operationId: patchLayer
+      parameters:
+        - $ref: "#/components/parameters/SceneId"
+        - $ref: "#/components/parameters/LayerId"
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/LayerPatch"
+            example:
+              sourceA: Black
+      responses:
+        "200":
+          description: Applied
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /scenes/{scene}/actions/{action}:
+    patch:
+      tags: [scenes]
+      operationId: patchAction
+      parameters:
+        - $ref: "#/components/parameters/SceneId"
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/ActionPatch"
+            example:
+              state: play
+      responses:
+        "200":
+          description: Applied
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /scenes/{scene}/macros/{macro}:
+    patch:
+      tags: [scenes]
+      operationId: patchSceneMacro
+      parameters:
+        - $ref: "#/components/parameters/SceneId"
+        - $ref: "#/components/parameters/MacroId"
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/MacroPatch"
+            example:
+              state: play
+      responses:
+        "200":
+          description: Applied
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /scenes/{scene}/snapshots/{snapshot}:
+    patch:
+      tags: [scenes]
+      operationId: patchSnapshot
+      parameters:
+        - $ref: "#/components/parameters/SceneId"
+        - $ref: "#/components/parameters/SnapshotId"
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: "#/components/schemas/SnapshotPatch"
+            example:
+              state: recall
+      responses:
+        "200":
+          description: Applied
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    digestAuth:
+      type: http
+      scheme: digest
+  parameters:
+    InputId:
+      name: input
+      in: path
+      required: true
+      description: Input name, numeric index, or UUID
+      schema:
+        type: string
+    MacroId:
+      name: macro
+      in: path
+      required: true
+      description: Macro name or UUID
+      schema:
+        type: string
+    AuxId:
+      name: aux
+      in: path
+      required: true
+      description: AUX name, numeric index, or UUID
+      schema:
+        type: string
+    MultiviewerId:
+      name: multiviewer
+      in: path
+      required: true
+      description: Index `0-3`, name, or UUID
+      schema:
+        type: string
+    SceneId:
+      name: scene
+      in: path
+      required: true
+      description: Scene name or UUID (UUID is recommended; names may collide)
+      schema:
+        type: string
+    LayerId:
+      name: layer
+      in: path
+      required: true
+      description: Layer name or UUID
+      schema:
+        type: string
+    SnapshotId:
+      name: snapshot
+      in: path
+      required: true
+      description: Snapshot name or UUID
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Invalid JSON, unknown PATCH keys, or source/preset not in the allowed list
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    NotFound:
+      description: Unknown path or object
+  schemas:
+    Input:
+      type: object
+      required: [index, name, tally, uuid]
+      properties:
+        index:
+          type: integer
+        name:
+          type: string
+        tally:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+    Macro:
+      type: object
+      required: [color, name, path, uuid]
+      properties:
+        color:
+          type: string
+          example: "rgb(255,255,255)"
+        name:
+          type: string
+        path:
+          type: string
+        state:
+          nullable: true
+          type: string
+          description: Always null on GET; write `play` via PATCH
+        uuid:
+          type: string
+          format: uuid
+    MacroPatch:
+      type: object
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [play]
+    Aux:
+      type: object
+      required: [index, name, source, sources, uuid]
+      properties:
+        index:
+          type: integer
+        name:
+          type: string
+        source:
+          type: string
+        sources:
+          type: array
+          items:
+            type: string
+        uuid:
+          type: string
+          format: uuid
+    AuxPatch:
+      type: object
+      required: [source]
+      properties:
+        source:
+          type: string
+          description: Must be present in the AUX `sources` list
+    MultiviewerPreset:
+      type: object
+      required: [id, name, usr]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        usr:
+          type: boolean
+    Multiviewer:
+      type: object
+      required: [index, name, presets, sdp, uuid]
+      properties:
+        index:
+          type: integer
+        name:
+          type: string
+        preset:
+          nullable: true
+          type: integer
+          description: Always null on GET; write a preset id via PATCH
+        presets:
+          type: array
+          items:
+            $ref: "#/components/schemas/MultiviewerPreset"
+        sdp:
+          type: string
+        uuid:
+          type: string
+          format: uuid
+    MultiviewerPatch:
+      type: object
+      required: [preset]
+      properties:
+        preset:
+          type: integer
+          description: Must match an id in the `presets` list
+    Action:
+      type: object
+      required: [name, uuid]
+      properties:
+        name:
+          type: string
+        state:
+          nullable: true
+          type: string
+        uuid:
+          type: string
+          format: uuid
+    ActionPatch:
+      type: object
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [play]
+    Layer:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+        sourceA:
+          type: string
+        sourceB:
+          type: string
+        sources:
+          type: array
+          items:
+            type: string
+        uuid:
+          type: string
+          format: uuid
+    LayerPatch:
+      type: object
+      description: At least one of sourceA / sourceB is required
+      properties:
+        sourceA:
+          type: string
+        sourceB:
+          type: string
+    Snapshot:
+      type: object
+      required: [name, uuid]
+      properties:
+        name:
+          type: string
+        state:
+          nullable: true
+          type: string
+        uuid:
+          type: string
+          format: uuid
+    SnapshotPatch:
+      type: object
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [recall]
+    Scene:
+      type: object
+      required: [name, tally, uuid]
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Action"
+        layers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Layer"
+        macros:
+          type: array
+          items:
+            $ref: "#/components/schemas/Macro"
+        name:
+          type: string
+        path:
+          type: string
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/Snapshot"
+        tally:
+          type: integer
+        uuid:
+          type: string
+          format: uuid
+    ErrorBody:
+      type: object
+      properties:
+        code:
+          type: integer
+        text:
+          type: string
