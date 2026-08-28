@@ -32,19 +32,26 @@ pub struct Macro {
     pub uuid: String,
 }
 
-/// PATCH body for a macro (`state: play`).
+/// PATCH body for a macro.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MacroPatch {
-    /// Macro action. The spec documents `play`.
+    /// Macro action. The REST spec documents `play`; Kairos also accepts
+    /// `stop`, `record`, and `stop_record`.
     pub state: MacroState,
 }
 
 /// Writable macro / action state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum MacroState {
     /// Play / fire the macro or action.
     Play,
+    /// Stop a running macro.
+    Stop,
+    /// Start recording a macro.
+    Record,
+    /// Stop recording a macro.
+    StopRecord,
 }
 
 /// AUX bus.
@@ -155,9 +162,12 @@ impl ActionPatch {
 impl MacroPatch {
     /// Fire the macro.
     pub fn play() -> Self {
-        Self {
-            state: MacroState::Play,
-        }
+        Self::with_state(MacroState::Play)
+    }
+
+    /// Build a PATCH body for any documented macro state.
+    pub fn with_state(state: MacroState) -> Self {
+        Self { state }
     }
 }
 
@@ -305,6 +315,18 @@ mod tests {
     fn layer_patch_omits_unset_fields() {
         let body = serde_json::to_value(LayerPatch::source_a("Black")).unwrap();
         assert_eq!(body, serde_json::json!({"sourceA": "Black"}));
+    }
+
+    #[test]
+    fn serde_macro_patch_states() {
+        assert_eq!(
+            serde_json::to_value(MacroPatch::play()).unwrap(),
+            serde_json::json!({"state": "play"})
+        );
+        assert_eq!(
+            serde_json::to_value(MacroPatch::with_state(MacroState::StopRecord)).unwrap(),
+            serde_json::json!({"state": "stop_record"})
+        );
     }
 
     #[test]
