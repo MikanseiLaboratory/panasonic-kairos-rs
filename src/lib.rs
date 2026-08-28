@@ -1,15 +1,16 @@
-//! Unofficial HTTP client for the Panasonic KAIROS REST API.
+//! Unofficial client for Panasonic KAIROS.
 //!
-//! Covers the GET / PATCH surface documented for Kairos Core
-//! (AT-KC200, AT-KC100, AT-KC2000, AT-KC1000) version **1.7.3**.
+//! Covers the REST API (GET / PATCH) documented for Kairos Core
+//! (AT-KC200, AT-KC100, AT-KC2000, AT-KC1000) version **1.7.3**,
+//! and the Simple Control Protocol (TCP port 3005).
 //!
-//! PUT, POST, and DELETE are not part of the protocol and must not be sent.
+//! PUT, POST, and DELETE are not part of the REST protocol and must not be sent.
 //! Trailing slashes are rejected by the device (`404 Invalid url`).
 //!
 //! # Features
 //!
-//! - `std` (default): blocking HTTP (`ureq`) with Basic / Digest auth
-//! - `tokio` (default): async HTTP (`reqwest`) with Basic / Digest auth
+//! - `std` (default): blocking HTTP (`ureq`) and blocking Simple Control (`std::net`)
+//! - `tokio` (default): async HTTP (`reqwest`) and async Simple Control (`tokio::net`)
 //!
 //! # Example
 //!
@@ -37,19 +38,31 @@ pub mod auth;
 pub mod config;
 pub mod error;
 pub mod id;
+pub mod simple;
 pub mod types;
 
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub mod http;
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+pub mod tcp;
+
 #[cfg(feature = "tokio")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub mod http_async;
 
+#[cfg(feature = "tokio")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
+pub mod tcp_async;
+
 mod transport;
 
-pub use config::{Credentials, HttpConfig, DEFAULT_HOST, DEFAULT_PORT, DEFAULT_USERNAME};
+pub use config::{
+    Credentials, HttpConfig, TcpConfig, DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SIMPLE_PORT,
+    DEFAULT_USERNAME,
+};
 pub use error::{Error, Result};
 pub use id::ResourceId;
 pub use types::*;

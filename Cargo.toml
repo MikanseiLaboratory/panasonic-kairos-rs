@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.75"
 authors = ["Shugo Kawamura <ruk1ium@gmail.com>"]
-description = "Unofficial HTTP client for the Panasonic KAIROS REST API"
+description = "Unofficial Panasonic KAIROS REST and Simple Control client"
 license = "MIT"
 repository = "https://github.com/MikanseiLaboratory/panasonic-kairos-rs"
 readme = "README.md"
 keywords = ["kairos", "panasonic", "rest", "broadcast", "switcher"]
 categories = ["api-bindings", "network-programming"]
+
 [features]
 default = ["std", "tokio"]
 std = ["dep:ureq"]
@@ -24,11 +25,11 @@ url = "2"
 
 ureq = { version = "2.12", optional = true, default-features = false, features = ["tls"] }
 reqwest = { version = "0.12", optional = true, default-features = false, features = ["rustls-tls", "json"] }
-tokio = { version = "1", optional = true, features = ["time"] }
+tokio = { version = "1", optional = true, features = ["time", "net", "io-util"] }
 
 [dev-dependencies]
 pretty_assertions = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util"] }
 wiremock = "0.6"
 
 [[example]]

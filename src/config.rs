@@ -5,8 +5,10 @@ use url::Url;
 
 /// Factory-default IPv4 address.
 pub const DEFAULT_HOST: &str = "192.168.10.10";
-/// Factory-default TCP port.
+/// Factory-default REST API port.
 pub const DEFAULT_PORT: u16 = 1234;
+/// Factory-default Simple Control Protocol port.
+pub const DEFAULT_SIMPLE_PORT: u16 = 3005;
 /// REST API username (fixed by the vendor spec).
 pub const DEFAULT_USERNAME: &str = "Kairos";
 
@@ -126,6 +128,56 @@ impl HttpConfig {
     }
 }
 
+/// Simple Control Protocol (TCP) client configuration.
+#[derive(Debug, Clone)]
+pub struct TcpConfig {
+    /// Device host name or IPv4/IPv6 address (no scheme).
+    pub host: String,
+    /// TCP port. Kairos listens on [`DEFAULT_SIMPLE_PORT`] by default.
+    pub port: u16,
+    /// I/O timeout in milliseconds (`0` = no timeout).
+    pub timeout_ms: u64,
+}
+
+impl Default for TcpConfig {
+    fn default() -> Self {
+        Self::new(DEFAULT_HOST)
+    }
+}
+
+impl TcpConfig {
+    /// Config for `host` on [`DEFAULT_SIMPLE_PORT`].
+    pub fn new(host: impl Into<String>) -> Self {
+        Self {
+            host: host.into(),
+            port: DEFAULT_SIMPLE_PORT,
+            timeout_ms: 10_000,
+        }
+    }
+
+    /// Override the TCP port.
+    pub fn with_port(mut self, port: u16) -> Self {
+        self.port = port;
+        self
+    }
+
+    /// Set timeout in milliseconds.
+    pub fn with_timeout_ms(mut self, timeout_ms: u64) -> Self {
+        self.timeout_ms = timeout_ms;
+        self
+    }
+
+    /// `host:port` suitable for [`std::net::TcpStream::connect`].
+    pub fn addr(&self) -> String {
+        let host = self.host.trim().trim_matches(|c| c == '[' || c == ']');
+        if host.matches(':').count() >= 2 {
+            format!("[{host}]:{}", self.port)
+        } else {
+            format!("{host}:{}", self.port)
+        }
+    }
+}
+
 fn normalize_base(host: &str, https: bool) -> String {
     let trimmed = host.trim().trim_end_matches('/');
     if trimmed.contains("://") {
@@ -172,5 +224,11 @@ mod tests {
             .unwrap();
         assert_eq!(url.path(), "/scenes/M1-%20Main");
         assert!(!url.as_str().ends_with('/'));
+    }
+
+    #[test]
+    fn simple_control_addr() {
+        assert_eq!(TcpConfig::new("192.168.10.10").addr(), "192.168.10.10:3005");
+        assert_eq!(TcpConfig::new("core").with_port(4000).addr(), "core:4000");
     }
 }
