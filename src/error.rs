@@ -1,4 +1,4 @@
-//! Error types for the KAIROS REST client.
+//! Error types for the KAIROS client.
 
 use thiserror::Error;
 
